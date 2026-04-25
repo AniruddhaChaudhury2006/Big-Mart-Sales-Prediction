@@ -3,7 +3,6 @@ import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
 import seaborn as sns
-import shap
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from xgboost import XGBRegressor, plot_importance
@@ -59,19 +58,6 @@ st.subheader("📌 Feature Importance")
 fig, ax = plt.subplots()
 plot_importance(model, ax=ax)
 st.pyplot(fig)
-st.subheader("🧠 SHAP Explainability")
-def shap_values_calc(model, X):
-    explainer = shap.Explainer(model)
-    shap_values = explainer(X)
-    return shap_values
-if st.button("Show SHAP Summary"):
-    with st.spinner("Calculating SHAP values..."):
-        sample_X = X.sample(200, random_state=2)
-        explainer = shap.Explainer(model)
-        shap_values = explainer(sample_X)
-        fig, ax = plt.subplots()
-        shap.plots.beeswarm(shap_values, show=False)
-        st.pyplot(fig)
 with st.expander("📈 Data Visualization"):
     col1, col2 = st.columns(2)
     with col1:
