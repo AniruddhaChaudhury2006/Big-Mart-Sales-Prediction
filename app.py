@@ -16,7 +16,7 @@ def load_data():
     missing = df['Outlet_Size'].isnull()
     df.loc[missing, 'Outlet_Size'] = df.loc[missing, 'Outlet_Type'].apply(lambda x: mode[x][0])
     df['Outlet_Size'] = df['Outlet_Size'].astype(str)
-    df.replace({"Item_Fat_Content": {'low fat': 'Low Fat','LF': 'Low Fa'reg': 'Regular'}}, inplace=True)
+    df.replace({"Item_Fat_Content": {'low fat': 'Low Fat','LF': 'Low Fat', 'reg': 'Regular'}}, inplace=True)
     return df
 data = load_data()
 original_data = data.copy()
