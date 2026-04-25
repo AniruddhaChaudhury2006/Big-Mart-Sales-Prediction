@@ -35,7 +35,7 @@ st.write("R squared value on test data = ",r2_test)
 st.subheader("Data Visualization")
 if st.checkbox("Show Distributions"):
     fig, ax = plt.subplots()
-    sns.histplot(original_data['Item_MRP'], kde=True, ax=ax)
+    sns.histplot(original_data['Item_MRP'], kd=True, ax=ax)
     st.pyplot(fig)
 if st.checkbox("Show Outlet Type Count"):
     fig, ax = plt.subplots(figsize=(8,4))
@@ -53,30 +53,18 @@ def user_input():
     Outlet_Identifier = st.selectbox("Outlet Identifier",original_data['Outlet_Identifier'].unique())
     Outlet_Establishment_Year = st.number_input("Outlet Establishment Year", value=1999)
     Outlet_Size = st.selectbox("Outlet Size", original_data['Outlet_Size'].unique())
+    Outlet_Location_Type = st.selectbox("Outlet Location Type", original_data['Outlet_Location_Type'].unique())
+    Outlet_Type = st.selectbox("Outlet Type",original_data['Outlet_Type'].unique())
+    return {"Item_Identifier": Item_Identifier,"Item_Weight": Item_Weight,"Item_Fat_Content": Item_Fat_Content,"Item_Visibility": Item_Visibility,"Item_Type": Item_Type,"Item_MRP": Item_MRP,"Outlet_Identifier": Outlet_Identifier,"Outlet_Establishment_Year": Outlet_Establishment_Year,"Outlet_Size": Outlet_Size,"Outlet_Location_Type": Outlet_Location_Type,"Outlet_Type": Outlet_Type}
+input_dict = user_input()
+for col in encoder_dict:
+    input_dict[col] = encoder_dict[col].transform([input_dict[col]])[0]
+input_data = np.array(list(input_dict.values())).reshape(1, -1)
+if st.button("Predict Sales"):
+  prediction = regressor.predict(input_data)
+  st.success(f"Predicted Sales: ₹ {prediction[0]:.2f}")
 
-    Outlet_Location_Type = st.selectbox(
-        "Outlet Location Type",
-        original_data['Outlet_Location_Type'].unique()
-    )
-
-    Outlet_Type = st.selectbox(
-        "Outlet Type",
-        original_data['Outlet_Type'].unique()
-    )
-
-    return {
-        "Item_Identifier": Item_Identifier,
-        "Item_Weight": Item_Weight,
-        "Item_Fat_Content": Item_Fat_Content,
-        "Item_Visibility": Item_Visibility,
-        "Item_Type": Item_Type,
-        "Item_MRP": Item_MRP,
-        "Outlet_Identifier": Outlet_Identifier,
-        "Outlet_Establishment_Year": Outlet_Establishment_Year,
-        "Outlet_Size": Outlet_Size,
-        "Outlet_Location_Type": Outlet_Location_Type,
-        "Outlet_Type": Outlet_Type
-    }
+  
 
 
 
