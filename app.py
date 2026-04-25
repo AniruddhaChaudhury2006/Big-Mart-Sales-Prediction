@@ -3,20 +3,17 @@ import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
 import seaborn as sns
+import shap
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from xgboost import XGBRegressor, plot_importance
 from sklearn import metrics
 st.set_page_config(page_title="Big Mart Sales Predictor", layout="wide")
-# 🌙 DARK UI POLISH
 st.markdown("""
 <style>
-body {
-    background-color: #0e1117;
-    color: white;
-}
 .stApp {
-    background-color: #0e1117;
+    background-color: white;
+    color: black;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -26,24 +23,12 @@ st.markdown("### Predict product sales using Machine Learning")
 def load_data():
     df = pd.read_csv('Train_bigmart.csv')
     df['Item_Weight'].fillna(df['Item_Weight'].mean(), inplace=True)
-    mode = df.pivot_table(
-        values="Outlet_Size",
-        columns="Outlet_Type",
-        aggfunc=lambda x: x.mode()[0]
-    )
+    mode = df.pivot_table(values="Outlet_Size",columns="Outlet_Type",aggfunc=lambda x: x.mode()[0])
     missing = df['Outlet_Size'].isnull()
-    df.loc[missing, 'Outlet_Size'] = df.loc[missing, 'Outlet_Type'].apply(
-        lambda x: mode[x].values[0] if x in mode else np.nan
-    )
+    df.loc[missing, 'Outlet_Size'] = df.loc[missing, 'Outlet_Type'].apply(lambda x: mode[x].values[0] if x in mode else np.nan)
     df['Outlet_Size'].fillna('Medium', inplace=True)
     df['Outlet_Size'] = df['Outlet_Size'].astype(str)
-    df.replace({
-        "Item_Fat_Content": {
-            'low fat': 'Low Fat',
-            'LF': 'Low Fat',
-            'reg': 'Regular'
-        }
-    }, inplace=True)
+    df.replace({"Item_Fat_Content": {'low fat': 'Low Fat','LF': 'Low Fat','reg': 'Regular'}}, inplace=True)
     return df
 data = load_data()
 original_data = data.copy()
@@ -51,11 +36,7 @@ original_data = data.copy()
 def encode_data(df):
     df = df.copy()
     encoders = {}
-    for col in [
-        "Item_Identifier", "Item_Fat_Content", "Item_Type",
-        "Outlet_Identifier", "Outlet_Size",
-        "Outlet_Location_Type", "Outlet_Type"
-    ]:
+    for col in ["Item_Identifier", "Item_Fat_Content", "Item_Type","Outlet_Identifier", "Outlet_Size","Outlet_Location_Type", "Outlet_Type"]:
         le = LabelEncoder()
         df[col] = le.fit_transform(df[col])
         encoders[col] = le
@@ -78,6 +59,17 @@ st.subheader("📌 Feature Importance")
 fig, ax = plt.subplots()
 plot_importance(model, ax=ax)
 st.pyplot(fig)
+st.subheader("🧠 SHAP Explainability")
+@st.cache_resource
+def shap_values_calc(model, X):
+    explainer = shap.Explainer(model)
+    shap_values = explainer(X)
+    return shap_values
+if st.button("Show SHAP Summary"):
+    shap_values = shap_values_calc(model, X)
+    fig, ax = plt.subplots()
+    shap.plots.beeswarm(shap_values, show=False)
+    st.pyplot(fig)
 with st.expander("📈 Data Visualization"):
     col1, col2 = st.columns(2)
     with col1:
@@ -92,19 +84,7 @@ with st.expander("📈 Data Visualization"):
         st.pyplot(fig)
 st.sidebar.header("🧾 Enter Product Details")
 def user_input():
-    return {
-        "Item_Identifier": st.sidebar.selectbox("Item Identifier", original_data['Item_Identifier'].unique()),
-        "Item_Weight": st.sidebar.number_input("Item Weight", min_value=0.0),
-        "Item_Fat_Content": st.sidebar.selectbox("Fat Content", original_data['Item_Fat_Content'].unique()),
-        "Item_Visibility": st.sidebar.number_input("Item Visibility", min_value=0.0),
-        "Item_Type": st.sidebar.selectbox("Item Type", original_data['Item_Type'].unique()),
-        "Item_MRP": st.sidebar.number_input("Item MRP", min_value=0.0),
-        "Outlet_Identifier": st.sidebar.selectbox("Outlet ID", original_data['Outlet_Identifier'].unique()),
-        "Outlet_Establishment_Year": st.sidebar.number_input("Establishment Year", min_value=1980, max_value=2025),
-        "Outlet_Size": st.sidebar.selectbox("Outlet Size", original_data['Outlet_Size'].unique()),
-        "Outlet_Location_Type": st.sidebar.selectbox("Location Type", original_data['Outlet_Location_Type'].unique()),
-        "Outlet_Type": st.sidebar.selectbox("Outlet Type", original_data['Outlet_Type'].unique())
-    }
+    return {"Item_Identifier": st.sidebar.selectbox("Item Identifier", original_data['Item_Identifier'].unique()),"Item_Weight": st.sidebar.number_input("Item Weight", min_value=0.0),"Item_Fat_Content": st.sidebar.selectbox("Fat Content", original_data['Item_Fat_Content'].unique()),"Item_Visibility": st.sidebar.number_input("Item Visibility", min_value=0.0),"Item_Type": st.sidebar.selectbox("Item Type", original_data['Item_Type'].unique()),"Item_MRP": st.sidebar.number_input("Item MRP", min_value=0.0),"Outlet_Identifier": st.sidebar.selectbox("Outlet ID", original_data['Outlet_Identifier'].unique()),"Outlet_Establishment_Year": st.sidebar.number_input("Establishment Year", min_value=1980, max_value=2025),"Outlet_Size": st.sidebar.selectbox("Outlet Size", original_data['Outlet_Size'].unique()),"Outlet_Location_Type": st.sidebar.selectbox("Location Type", original_data['Outlet_Location_Type'].unique()),"Outlet_Type": st.sidebar.selectbox("Outlet Type", original_data['Outlet_Type'].unique())}
 input_dict = user_input()
 error = False
 for col in encoder_dict:
@@ -119,7 +99,6 @@ if not error and st.sidebar.button("🚀 Predict Sales"):
     pred = model.predict(input_data)
     st.subheader("💰 Prediction Result")
     st.success(f"Estimated Sales: ₹ {pred[0]:,.2f}")
-
 
 
 
