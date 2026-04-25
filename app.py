@@ -60,16 +60,18 @@ fig, ax = plt.subplots()
 plot_importance(model, ax=ax)
 st.pyplot(fig)
 st.subheader("🧠 SHAP Explainability")
-@st.cache_resource
 def shap_values_calc(model, X):
     explainer = shap.Explainer(model)
     shap_values = explainer(X)
     return shap_values
 if st.button("Show SHAP Summary"):
-    shap_values = shap_values_calc(model, X)
-    fig, ax = plt.subplots()
-    shap.plots.beeswarm(shap_values, show=False)
-    st.pyplot(fig)
+    with st.spinner("Calculating SHAP values..."):
+        sample_X = X.sample(200, random_state=2)
+        explainer = shap.Explainer(model)
+        shap_values = explainer(sample_X)
+        fig, ax = plt.subplots()
+        shap.plots.beeswarm(shap_values, show=False)
+        st.pyplot(fig)
 with st.expander("📈 Data Visualization"):
     col1, col2 = st.columns(2)
     with col1:
